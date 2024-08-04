@@ -1,7 +1,5 @@
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:youtube_downloader/src/services/search_service.dart';
@@ -57,8 +55,8 @@ class LandscapeSearch extends HookWidget {
         itemCount: videos.length + (loading ? 1 : 0),
         itemBuilder: (context, index) {
           if (loading && index == videos.length) {
-            return Column(
-              children: const [
+            return const Column(
+              children: [
                 SizedBox(height: 10),
                 CircularProgressIndicator(),
               ],
@@ -137,8 +135,8 @@ class LandscapeSearch extends HookWidget {
                                   .textTheme
                                   .titleMedium
                                   ?.copyWith(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold),
                               textAlign: TextAlign.start,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -147,14 +145,19 @@ class LandscapeSearch extends HookWidget {
                       ),
 
                       // date
-                      const SizedBox(height: 5,),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       Flexible(
                         flex: 2,
                         child: Padding(
                           padding: const EdgeInsets.only(left: 17),
                           child: AutoSizeText(
                               '${AppLocalizations.of(context)!.uploadDateRow}: ${video.uploadDateRaw}',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 10),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontSize: 10),
                               textAlign: TextAlign.start,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -195,8 +198,8 @@ class PortraitSearch extends StatelessWidget {
       itemCount: videos.length + (loading ? 1 : 0),
       itemBuilder: (context, index) {
         if (service.loading && index == videos.length) {
-          return Column(
-            children: const [
+          return const Column(
+            children: [
               SizedBox(height: 10),
               CircularProgressIndicator(),
             ],
@@ -270,7 +273,9 @@ class PortraitSearch extends StatelessWidget {
                   ),
 
                   // date
-                  const SizedBox(height: 5,),
+                  const SizedBox(
+                    height: 5,
+                  ),
                   Text(
                     video.uploadDateRaw ?? "",
                     style: Theme.of(context)

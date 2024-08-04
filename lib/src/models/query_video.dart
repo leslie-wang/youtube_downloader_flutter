@@ -10,7 +10,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'download_manager.dart';
 
-
 ///
 /// QueryVideo: struct for current video download
 ///
@@ -29,7 +28,13 @@ class QueryVideo {
   final List<int>? thumbnailBytes;
   String prefixName;
 
-  QueryVideo(this.title, this.id, this.author, this.duration, this.thumbnail, this.uploadDate, this.uploadDateRaw, {this.album, this.track, this.path, this.thumbnailBytes, this.prefixName = ""});
+  QueryVideo(this.title, this.id, this.author, this.duration, this.thumbnail,
+      this.uploadDate, this.uploadDateRaw,
+      {this.album,
+      this.track,
+      this.path,
+      this.thumbnailBytes,
+      this.prefixName = ""});
 
   @override
   String toString() {
@@ -84,7 +89,7 @@ class QueryVideo {
       headerBytes = response.bodyBytes;
     }
 
-    final al = {"comment":"Youtube Downloader Hexer10/MickBad"};
+    final al = {"comment": "Youtube Downloader Hexer10/MickBad"};
 
     final encoder = ID3Encoder(bytes);
     final List<int> output = encoder.encodeSync(MetadataV2p4Body(
@@ -92,9 +97,7 @@ class QueryVideo {
       imageBytes: headerBytes,
       artist: author,
       album: album,
-      userDefines: {
-        "comment": al.toString()
-      },
+      userDefines: {"comment": al.toString()},
     ));
 
     await File(fileAudio).writeAsBytes(output);
@@ -124,7 +127,8 @@ class QueryListVideos {
   int get videoEnableCount => items.where((element) => element.enable).length;
   bool get isEmpty => items.isEmpty;
   bool get isNotEmpty => items.isNotEmpty;
-  Iterable<QueryListVideoItem> get videosEnableList => items.where((element) => element.enable) ?? [];
+  Iterable<QueryListVideoItem> get videosEnableList =>
+      items.where((element) => element.enable);
 
   ///
   /// toString()
@@ -132,7 +136,7 @@ class QueryListVideos {
   @override
   String toString() {
     String ret = "[$id] $author - $title: $videoCount videos";
-    for(QueryListVideoItem item in items) {
+    for (QueryListVideoItem item in items) {
       ret += "\n${item.toString()}";
     }
     return ret;
@@ -164,7 +168,8 @@ class QueryListVideos {
     int currentVideoCount = 1;
     await for (var video in yt.playlists.getVideos(playlist.id)) {
       // get streams list
-      StreamManifest manifest = await yt.videos.streamsClient.getManifest(video.id);
+      StreamManifest manifest =
+          await yt.videos.streamsClient.getManifest(video.id);
       List<StreamInfo> filterStream = manifest.streams.toList(growable: false);
 
       // choose best values
@@ -172,12 +177,13 @@ class QueryListVideos {
       AudioOnlyStreamInfo? streamBestAudio;
 
       // parsing list of stream widget to get best format
-      for(var stream in filterStream) {
+      for (var stream in filterStream) {
         // check video stream
         if (stream is VideoOnlyStreamInfo) {
           // search best format
           streamBestVideo ??= stream; // first is best
-          if (/*stream.videoCodec == "mp4" && */stream.size.totalBytes > streamBestVideo.size.totalBytes) {
+          if (/*stream.videoCodec == "mp4" && */ stream.size.totalBytes >
+              streamBestVideo.size.totalBytes) {
             // set new one
             streamBestVideo = stream;
           }
@@ -203,23 +209,28 @@ class QueryListVideos {
       // get more informations
       final videoYT = await yt.videos.get(video.url);
       final QueryVideo queryVideo = QueryVideo(
-          videoYT.title,
-          videoYT.id.toString(),
-          videoYT.author,
-          videoYT.duration!,
-          videoYT.thumbnails.highResUrl,
-          videoYT.uploadDate,
-          videoYT.uploadDateRaw,
-          album: title,
+        videoYT.title,
+        videoYT.id.toString(),
+        videoYT.author,
+        videoYT.duration!,
+        videoYT.thumbnails.highResUrl,
+        videoYT.uploadDate,
+        videoYT.uploadDateRaw,
+        album: title,
       );
 
       // add current stream to Video list download
-      QueryListVideoItem item = QueryListVideoItem(url: video.url, queryVideo: queryVideo, streamBestAudio: streamBestAudio, streamBestVideo: streamBestVideo);
+      QueryListVideoItem item = QueryListVideoItem(
+          url: video.url,
+          queryVideo: queryVideo,
+          streamBestAudio: streamBestAudio,
+          streamBestVideo: streamBestVideo);
       items.add(item);
 
       // show progress
-      yield double.parse((currentVideoCount * 100.0 / videoCount).toStringAsFixed(1));
-      currentVideoCount ++;
+      yield double.parse(
+          (currentVideoCount * 100.0 / videoCount).toStringAsFixed(1));
+      currentVideoCount++;
     }
 
     // return if videos found
@@ -230,7 +241,8 @@ class QueryListVideos {
   /// Enable/disable video stream in playlist
   ///
   bool enableVideo(String id, bool enable) {
-    for(QueryListVideoItem item in items.where((element) => element.id == id)) {
+    for (QueryListVideoItem item
+        in items.where((element) => element.id == id)) {
       item.enable = enable;
     }
     return enable;
@@ -239,45 +251,52 @@ class QueryListVideos {
   ///
   /// download playlist
   ///
-  Future<void> download(DownloadManager downloadManager, YoutubeExplode yt, Settings settings, AppLocalizations localizations, QueryListDownload type) async {
+  Future<void> download(
+      DownloadManager downloadManager,
+      YoutubeExplode yt,
+      Settings settings,
+      AppLocalizations localizations,
+      QueryListDownload type) async {
     // parse each stream enable to download
     int currentStreamNumber = 0;
     int maxLeadingPrefix = videoEnableCount.toString().length;
-    for(QueryListVideoItem stream in videosEnableList) {
+    for (QueryListVideoItem stream in videosEnableList) {
       // increment
-      currentStreamNumber ++;
+      currentStreamNumber++;
 
       // set prefix name
       if (settings.isLeadingZeroPlaylist) {
-        stream.queryVideo.prefixName = currentStreamNumber.toString().padLeft(maxLeadingPrefix, '0') + " - ";
+        stream.queryVideo.prefixName =
+            currentStreamNumber.toString().padLeft(maxLeadingPrefix, '0') +
+                " - ";
       }
 
       // add track number in video (for mp3 extraction?)
       stream.queryVideo.track = currentStreamNumber;
 
       // download stream
-      switch(type) {
+      switch (type) {
         case QueryListDownload.merge:
           // download video+audio
           final mergeTracks = StreamMerge();
           mergeTracks.video = stream.streamBestVideo;
           mergeTracks.audio = stream.streamBestAudio;
-          await downloadManager.downloadStream(yt, stream.queryVideo, settings,
-              StreamType.video, localizations,
+          await downloadManager.downloadStream(
+              yt, stream.queryVideo, settings, StreamType.video, localizations,
               merger: mergeTracks, ffmpegContainer: settings.ffmpegContainer);
           break;
 
         case QueryListDownload.audio:
           // download audio only
-          await downloadManager.downloadStream(yt, stream.queryVideo, settings,
-              StreamType.audio, localizations,
+          await downloadManager.downloadStream(
+              yt, stream.queryVideo, settings, StreamType.audio, localizations,
               singleStream: stream.streamBestAudio);
           break;
 
         case QueryListDownload.video:
           // download video only
-          await downloadManager.downloadStream(yt, stream.queryVideo, settings,
-              StreamType.video, localizations,
+          await downloadManager.downloadStream(
+              yt, stream.queryVideo, settings, StreamType.video, localizations,
               singleStream: stream.streamBestVideo);
           break;
       }
@@ -305,7 +324,11 @@ class QueryListVideoItem {
   final VideoOnlyStreamInfo streamBestVideo;
   final AudioOnlyStreamInfo streamBestAudio;
 
-  QueryListVideoItem({required this.url, required this.queryVideo, required this.streamBestAudio, required this.streamBestVideo}) {
+  QueryListVideoItem(
+      {required this.url,
+      required this.queryVideo,
+      required this.streamBestAudio,
+      required this.streamBestVideo}) {
     // repeat id to quickly access
     id = queryVideo.id;
   }

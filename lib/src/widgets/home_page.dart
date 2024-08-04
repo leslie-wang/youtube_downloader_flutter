@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:youtube_downloader/src/widgets/search_view/playlists_list.dart';
@@ -46,48 +45,57 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 50,),
+            const SizedBox(
+              height: 50,
+            ),
 
             // logo
             Center(
-              child: GestureDetector(
-                onLongPress: () async {
-                  if (!await launchUrlString("https://www.flaticon.com/free-icon/download_1950083")) {
-                    // throw 'Could not launch $_url';
-                    // oops nothing
-                  }
-                },
-                child: Image.asset("assets/images/download.png", height: 256),
-              )
-
+                child: GestureDetector(
+              onLongPress: () async {
+                if (!await launchUrlString(
+                    "https://www.flaticon.com/free-icon/download_1950083")) {
+                  // throw 'Could not launch $_url';
+                  // oops nothing
+                }
+              },
+              child: Image.asset("assets/images/download.png", height: 256),
+            )),
+            const SizedBox(
+              height: 80.0,
             ),
-            const SizedBox(height: 80.0,),
 
             Center(child: Text(AppLocalizations.of(context)!.startSearch)),
-            const SizedBox(height: 20.0,),
+            const SizedBox(
+              height: 20.0,
+            ),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: MediaQuery.of(context)!.size.width * .60,
+                  width: MediaQuery.of(context).size.width * .60,
                   child: TextField(
                     controller: urlController,
                     onChanged: (value) => url = value,
-                    onSubmitted: (value) async => await launchUrlStream(context),
+                    onSubmitted: (value) async =>
+                        await launchUrlStream(context),
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
                       labelText: AppLocalizations.of(context)!.searchUrl,
                     ),
                   ),
                 ),
-
                 Container(
                   width: 50,
                   height: 50,
                   color: Colors.white70,
                   child: IconButton(
-                    icon: const Icon(Icons.paste, size: 30, color: Colors.black45,),
+                    icon: const Icon(
+                      Icons.paste,
+                      size: 30,
+                      color: Colors.black45,
+                    ),
                     tooltip: AppLocalizations.of(context)!.searchUrlTooltip,
                     onPressed: () async {
                       // check if already processing
@@ -96,13 +104,14 @@ class _HomePageState extends State<HomePage> {
                       }
 
                       // get clipboard
-                      ClipboardData? cdata = await Clipboard.getData(Clipboard.kTextPlain);
-                      String _localUrl = convertYoutubeUrl(cdata?.text ?? "") ?? "";
+                      ClipboardData? cdata =
+                          await Clipboard.getData(Clipboard.kTextPlain);
+                      String _localUrl =
+                          convertYoutubeUrl(cdata?.text ?? "") ?? "";
                       if (_localUrl.isNotEmpty) {
                         urlController.text = url = _localUrl;
                         await launchUrlStream(context);
-                      }
-                      else {
+                      } else {
                         urlController.text = "Not valid!";
                         url = "";
                       }
@@ -116,7 +125,10 @@ class _HomePageState extends State<HomePage> {
               child: TextButton(
                 onPressed: () async => await launchUrlStream(context),
                 child: (loadingStreams)
-                    ? ((percentLoading < 0.0 || percentLoading >= 100.0) ? const CircularProgressIndicator() : Text(AppLocalizations.of(context)!.playlistParsing(percentLoading)))
+                    ? ((percentLoading < 0.0 || percentLoading >= 100.0)
+                        ? const CircularProgressIndicator()
+                        : Text(AppLocalizations.of(context)!
+                            .playlistParsing(percentLoading)))
                     : Text(AppLocalizations.of(context)!.searchUrl),
               ),
             ),
@@ -125,7 +137,8 @@ class _HomePageState extends State<HomePage> {
       ),
       drawer: const AppDrawer(),
       appBar: const PreferredSize(
-          preferredSize: Size.fromHeight(kToolbarHeight), child: yt_search.SearchBar()),
+          preferredSize: Size.fromHeight(kToolbarHeight),
+          child: yt_search.SearchBar()),
     );
   }
 
@@ -166,9 +179,10 @@ class _HomePageState extends State<HomePage> {
         percentLoading = -1.0;
 
         // show download dialog
-        showDialog(context: context, builder: (context) => PlaylistsList(queryListVideos));
-      }
-      else {
+        showDialog(
+            context: context,
+            builder: (context) => PlaylistsList(queryListVideos));
+      } else {
         final videoYT = await yt.videos.get(url);
         final QueryVideo video = QueryVideo(
             videoYT.title,
@@ -192,5 +206,4 @@ class _HomePageState extends State<HomePage> {
       loadingStreams = false;
     });
   }
-
 }

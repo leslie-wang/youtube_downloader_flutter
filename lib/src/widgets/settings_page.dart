@@ -38,9 +38,9 @@ class SettingsPage extends HookConsumerWidget {
     final settings = ref.watch(settingsProvider.state);
 
     // ffmpeg path directory if windows/linux
-    Widget ffmpeg_locator_settings = Container();
+    Widget ffmpegLocatorSettings = Container();
     if (Platform.isWindows || Platform.isLinux) {
-      ffmpeg_locator_settings = ListTile(
+      ffmpegLocatorSettings = ListTile(
         title: Text(intl.ffmpegPath),
         subtitle: Text(settings.state.ffmpegPath),
         onTap: () async {
@@ -101,7 +101,7 @@ class SettingsPage extends HookConsumerWidget {
           const Divider(
             height: 0,
           ),
-          ffmpeg_locator_settings,
+          ffmpegLocatorSettings,
           const Divider(
             height: 0,
           ),

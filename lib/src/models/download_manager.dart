@@ -282,7 +282,7 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       downloadVideo.downloadStatus = DownloadStatus.failed;
       downloadVideo.error = error.toString();
     }, onDone: () async {
-      final newPath = await cleanUp(sink, file, downloadPath);
+      await cleanUp(sink, file, downloadPath);
 
       // convert mp3 if audio
       if (type == StreamType.audio) {
@@ -312,7 +312,6 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       } else {
         // other type, close it
         downloadVideo.downloadStatus = DownloadStatus.success;
-        //downloadVideo.path = newPath!;
       }
 
       // allways status download done
@@ -524,8 +523,8 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       muxedTrack.downloadPerc =
           (stats.getTime() * 1000 / video.duration.inMicroseconds * 100)
               .round();
-      // print("stats: ${stats.getTime()}");
-      // print("stats: ${stats.getSize()}");
+      // debugPrint("stats: ${stats.getTime()}");
+      // debugPrint("stats: ${stats.getSize()}");
     });
 
     muxedTrack._cancelCallback = () async {
@@ -573,9 +572,9 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       final data = utf8.decode(event);
       debugPrint('OUT: $data');
     }).onError((err, stack) {
-      print("ERRR");
-      print(err);
-      print(stack);
+      debugPrint("ERRR");
+      debugPrint(err);
+      debugPrint(stack);
 
       // finish
       downloadVideo.downloadStatus = DownloadStatus.failed;
@@ -623,14 +622,14 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       await File(pathSource).delete();
     }, (Log log) {
       // get logs during session
-      print("log: ${log.getMessage()}");
+      debugPrint("log: ${log.getMessage()}");
     }, (Statistics stats) {
       // generate stats
       downloadVideo.downloadPerc =
           (stats.getTime() * 1000 / video.duration.inMicroseconds * 100)
               .round();
-      // print("stats: ${stats.toString()}");
-      // print("stats: ${stats.getSize()}");
+      // debugPrint("stats: ${stats.toString()}");
+      // debugPrint("stats: ${stats.getSize()}");
     });
   }
 
@@ -703,6 +702,7 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       return path;
     }
     await file.delete();
+    return "";
   }
 
   factory DownloadManagerImpl.init(SharedPreferences prefs) {
@@ -795,10 +795,10 @@ class SingleTrack extends ChangeNotifier {
     notifyListeners();
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey()
   VoidCallback? _cancelCallback;
 
-  @JsonKey(ignore: true)
+  @JsonKey()
   final SharedPreferences? _prefs;
 
   SingleTrack(this.id, this.youtubeID, String path, this.title, this.size,
@@ -829,6 +829,7 @@ class MuxedTrack extends SingleTrack {
 
   @JsonKey()
   @override
+  // ignore: overridden_fields
   final StreamType streamType;
 
   MuxedTrack(int id, String path, String title, String size, int totalSize,
@@ -842,6 +843,7 @@ class MuxedTrack extends SingleTrack {
   @override
   Map<String, dynamic> toJson() => _$MuxedTrackToJson(this);
 
+  @override
   String get youtubeID {
     // Check if the video is not null and has a non-empty youtubeID
     if (video.youtubeID.isNotEmpty) {
