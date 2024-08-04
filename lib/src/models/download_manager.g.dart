@@ -9,6 +9,7 @@ part of 'download_manager.dart';
 SingleTrack _$SingleTrackFromJson(Map<String, dynamic> json) {
   return SingleTrack(
     json['id'] as int,
+    json['youtubeID'] as String,
     json['path'] as String,
     json['title'] as String,
     json['size'] as String,
@@ -26,6 +27,7 @@ SingleTrack _$SingleTrackFromJson(Map<String, dynamic> json) {
 Map<String, dynamic> _$SingleTrackToJson(SingleTrack instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'youtubeID': instance.youtubeID,
       'title': instance.title,
       'size': instance.size,
       'totalSize': instance.totalSize,
@@ -108,6 +110,7 @@ MuxedTrack _$MuxedTrackFromJson(Map<String, dynamic> json) {
 Map<String, dynamic> _$MuxedTrackToJson(MuxedTrack instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'youtubeID': instance.youtubeID,
       'title': instance.title,
       'size': instance.size,
       'totalSize': instance.totalSize,

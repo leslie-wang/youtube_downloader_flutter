@@ -4,9 +4,7 @@ import 'dart:io';
 
 import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_session.dart';
 import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full_gpl/log.dart';
 import 'package:ffmpeg_kit_flutter_full_gpl/session.dart';
@@ -18,6 +16,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:youtube_downloader/main.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:http/http.dart' as http;
 
 import 'query_video.dart';
 import 'settings.dart';
@@ -34,8 +33,11 @@ class DownloadManager extends ChangeNotifier {
           String? ffmpegContainer}) =>
       throw UnimplementedError();
 
-  Future<void> removeVideo(SingleTrack video, {bool forceDelete=true, bool forceNotify=true}) => throw UnimplementedError();
-  Future<void> removeAllVideos({bool forceDelete=true}) => throw UnimplementedError();
+  Future<void> removeVideo(SingleTrack video,
+          {bool forceDelete = true, bool forceNotify = true}) =>
+      throw UnimplementedError();
+  Future<void> removeAllVideos({bool forceDelete = true}) =>
+      throw UnimplementedError();
 
   List<SingleTrack> get videos => throw UnimplementedError();
   int get countProcessing => throw UnimplementedError();
@@ -60,12 +62,16 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
   }
 
   @override
-  int get countProcessing => videos.where((element) => element.downloadStatus == DownloadStatus.downloading || element.downloadStatus == DownloadStatus.muxing).length;
+  int get countProcessing => videos
+      .where((element) =>
+          element.downloadStatus == DownloadStatus.downloading ||
+          element.downloadStatus == DownloadStatus.muxing)
+      .length;
 
   DownloadManagerImpl._(this._prefs, this._nextId, this.videoIds, this.videos);
 
   void addVideo(SingleTrack video) {
-    final id = 'video_${video.id}';
+    final id = '${video.id}';
     videoIds.add(id);
 
     _prefs.setStringList('video_list', videoIds);
@@ -75,8 +81,9 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
   }
 
   @override
-  Future<void> removeVideo(SingleTrack video, {bool forceDelete=true, bool forceNotify=true}) async {
-    final id = 'video_${video.id}';
+  Future<void> removeVideo(SingleTrack video,
+      {bool forceDelete = true, bool forceNotify = true}) async {
+    final id = '${video.id}';
 
     videoIds.remove(id);
     videos.removeWhere((e) => e.id == video.id);
@@ -97,10 +104,12 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
   }
 
   @override
-  Future<void> removeAllVideos({bool forceDelete=true}) async {
+  Future<void> removeAllVideos({bool forceDelete = true}) async {
     final myVideos = videos.toList();
-    for(var video in myVideos) {
-      if (video.downloadStatus == DownloadStatus.success || video.downloadStatus == DownloadStatus.failed || video.downloadStatus == DownloadStatus.canceled) {
+    for (var video in myVideos) {
+      if (video.downloadStatus == DownloadStatus.success ||
+          video.downloadStatus == DownloadStatus.failed ||
+          video.downloadStatus == DownloadStatus.canceled) {
         // only no processing streams
         await removeVideo(video, forceDelete: forceDelete, forceNotify: false);
       }
@@ -130,6 +139,16 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
     }
   }
 
+  Future<String> mkSaveFilepath(String saveDir, prefix, title, ext) async {
+    // prefix filename
+    String prefixName = prefix ?? "";
+
+    final filename = "$prefixName${title.replaceAll(invalidChars, '_')}";
+    final downloadPath = await getValidPath(path.join(saveDir, filename + ext));
+
+    return downloadPath;
+  }
+
   @override
   Future<void> downloadStream(YoutubeExplode yt, QueryVideo video,
       Settings settings, StreamType type, AppLocalizations localizations,
@@ -155,6 +174,9 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
     final id = nextId;
     final saveDir = settings.downloadPath;
 
+    // save thumbnail
+    downloadThumbnail(video, saveDir);
+
     // check ffmpeg
     if (type == StreamType.audio || isMerging) {
       if (Platform.isWindows || Platform.isLinux) {
@@ -168,7 +190,7 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
     }
 
     // waiting queue free
-    while(true) {
+    while (true) {
       // get video downloading count
       if (countProcessing < settings.downloadQuota) {
         // we can download
@@ -183,11 +205,37 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       processMuxedTrack(yt, video, merger!, stream, saveDir, id,
           ffmpegContainer!, settings, localizations);
     } else {
-      processSingleTrack(yt, video, stream, saveDir, id, type, settings, localizations);
+      processSingleTrack(
+          yt, video, stream, saveDir, id, type, settings, localizations);
     }
 
     // litte waiting
     await Future.delayed(const Duration(milliseconds: 500), () {});
+  }
+
+  Future<void> downloadThumbnail(
+    QueryVideo video,
+    String saveDir,
+  ) async {
+    try {
+      // Send HTTP GET request to fetch the image
+      final response = await http.get(Uri.parse(video.thumbnail));
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        // Write the response body (which is the image) to a file
+        final filePath = await mkSaveFilepath(
+            saveDir, video.prefixName, video.title, ".jpg");
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+        debugPrint('Image saved to $filePath');
+      } else {
+        debugPrint(
+            'Failed to download image. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error to download image: $e');
+    }
   }
 
   Future<void> processSingleTrack(
@@ -199,16 +247,12 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       StreamType type,
       Settings settings,
       AppLocalizations localizations) async {
-    // prefix pathname
-    String prefixName = video.prefixName ?? "";
-
-    final pathname = "$prefixName${video.title.replaceAll(invalidChars, '_')}";
-    final downloadPath = await getValidPath(
-        '${path.join(saveDir, pathname)}${'.${stream.container.name}'}');
+    final downloadPath = await mkSaveFilepath(
+        saveDir, video.prefixName, video.title, "." + stream.container.name);
 
     // for mp3 convertion
-    final downloadPathConvert = await getValidPath(
-        '${path.join(saveDir, pathname)}${'.mp3'}');
+    final downloadPathConvert =
+        await mkSaveFilepath(saveDir, video.prefixName, video.title, ".mp3");
 
     final tempPath = path.join(saveDir, 'Unconfirmed $id.ytdownload');
 
@@ -216,8 +260,14 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
     final sink = file.openWrite();
     final dataStream = yt.videos.streamsClient.get(stream);
 
-    final downloadVideo = SingleTrack(id, (type == StreamType.audio) ? downloadPathConvert : downloadPath, video.title,
-        bytesToString(stream.size.totalBytes), stream.size.totalBytes, type,
+    final downloadVideo = SingleTrack(
+        id,
+        stream.videoId.toString(),
+        (type == StreamType.audio) ? downloadPathConvert : downloadPath,
+        video.title,
+        bytesToString(stream.size.totalBytes),
+        stream.size.totalBytes,
+        type,
         prefs: _prefs);
 
     addVideo(downloadVideo);
@@ -247,12 +297,19 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
         ];
         downloadVideo.downloadStatus = DownloadStatus.muxing;
         if (Platform.isWindows || Platform.isLinux) {
-          await desktopFFMPEGConvert(downloadVideo, downloadPath, downloadPathConvert, args, video, localizations, settings.ffmpegPath);
+          await desktopFFMPEGConvert(
+              downloadVideo,
+              downloadPath,
+              downloadPathConvert,
+              args,
+              video,
+              localizations,
+              settings.ffmpegPath);
         } else {
-          await mobileFFMPEGConvert(downloadVideo, downloadPath, downloadPathConvert, args, video, localizations);
+          await mobileFFMPEGConvert(downloadVideo, downloadPath,
+              downloadPathConvert, args, video, localizations);
         }
-      }
-      else {
+      } else {
         // other type, close it
         downloadVideo.downloadStatus = DownloadStatus.success;
         //downloadVideo.path = newPath!;
@@ -261,7 +318,6 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       // allways status download done
       showSnackbar(
           SnackBar(content: Text(localizations.finishDownload(video.title))));
-
     }, cancelOnError: true);
 
     downloadVideo._cancelCallback = () async {
@@ -289,12 +345,8 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       String ffmpegContainer,
       Settings settings,
       AppLocalizations localizations) async {
-    // prefix pathname
-    String prefixName = video.prefixName ?? "";
-
-    final pathname = "$prefixName${video.title.replaceAll(invalidChars, '_')}";
-    final downloadPath = await getValidPath(
-        '${path.join(settings.downloadPath, pathname)}$ffmpegContainer');
+    final downloadPath = await mkSaveFilepath(
+        saveDir, video.prefixName, video.title, ffmpegContainer);
 
     final audioTrack = processTrack(yt, merger.audio!, saveDir,
         stream.container.name, video, StreamType.audio, localizations);
@@ -405,9 +457,9 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       muxedTrack.downloadPerc =
           (ms / video.duration.inMicroseconds * 100).round();
     }).onError((err, stack) {
-      print("ERRR");
-      print(err);
-      print(stack);
+      debugPrint("ERRR");
+      debugPrint(err);
+      debugPrint(stack);
     });
 
     process.stderr.listen((event) {
@@ -419,7 +471,7 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       audioTrack._cancelCallback!();
       videoTrack._cancelCallback!();
 
-      print("killing now!");
+      debugPrint("killing now!");
       process.kill();
       muxedTrack.downloadStatus = DownloadStatus.canceled;
       localizations.cancelMerge(video.title);
@@ -436,7 +488,8 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
       QueryVideo video,
       AppLocalizations localizations) async {
     // execute ffmpeg-mobile
-    FFmpegSession session = await FFmpegKit.executeWithArgumentsAsync(args, (Session session) async {
+    FFmpegSession session = await FFmpegKit.executeWithArgumentsAsync(args,
+        (Session session) async {
       // when session is executed
       final returnCode = await session.getReturnCode();
       if (ReturnCode.isSuccess(returnCode)) {
@@ -450,30 +503,29 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
         await File(videoTrack.path).delete();
 
         // finish
-        showSnackbar(SnackBar(content: Text(localizations.finishMerge(video.title))));
-
+        showSnackbar(
+            SnackBar(content: Text(localizations.finishMerge(video.title))));
       } else if (ReturnCode.isCancel(returnCode)) {
         // cancel merge
         muxedTrack.downloadStatus = DownloadStatus.canceled;
-        showSnackbar(SnackBar(content: Text(localizations.cancelMerge(video.title))));
-
+        showSnackbar(
+            SnackBar(content: Text(localizations.cancelMerge(video.title))));
       } else {
         // cancel merge
         muxedTrack.downloadStatus = DownloadStatus.canceled;
-        showSnackbar(SnackBar(content: Text(localizations.cancelMerge(video.title))));
-
+        showSnackbar(
+            SnackBar(content: Text(localizations.cancelMerge(video.title))));
       }
-
     }, (Log log) {
       // get logs during session
-      print("log: ${log.getMessage()}");
-
+      debugPrint("log: ${log.getMessage()}");
     }, (Statistics stats) {
       // generate stats
-      muxedTrack.downloadPerc = (stats.getTime() * 1000 / video.duration.inMicroseconds * 100).round();
+      muxedTrack.downloadPerc =
+          (stats.getTime() * 1000 / video.duration.inMicroseconds * 100)
+              .round();
       // print("stats: ${stats.getTime()}");
       // print("stats: ${stats.getSize()}");
-
     });
 
     muxedTrack._cancelCallback = () async {
@@ -482,9 +534,9 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
 
       await FFmpegKit.cancel(session.getSessionId());
       muxedTrack.downloadStatus = DownloadStatus.canceled;
-      showSnackbar(SnackBar(content: Text(localizations.cancelMerge(video.title))));
+      showSnackbar(
+          SnackBar(content: Text(localizations.cancelMerge(video.title))));
     };
-
   }
 
   Future<void> desktopFFMPEGConvert(
@@ -506,7 +558,8 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
 
       // delete source
       await File(pathSource).delete();
-      showSnackbar(SnackBar(content: Text(localizations.finishConvert(video.title))));
+      showSnackbar(
+          SnackBar(content: Text(localizations.finishConvert(video.title))));
 
       // finish
       downloadVideo.downloadStatus = DownloadStatus.success;
@@ -551,36 +604,34 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
         await video.setId3Tag(pathOutput);
 
         // finish
-        showSnackbar(SnackBar(content: Text(localizations.finishConvert(video.title))));
+        showSnackbar(
+            SnackBar(content: Text(localizations.finishConvert(video.title))));
         downloadVideo.downloadStatus = DownloadStatus.success;
-
       } else if (ReturnCode.isCancel(returnCode)) {
         // cancel merge
         downloadVideo.downloadStatus = DownloadStatus.canceled;
-        showSnackbar(SnackBar(content: Text(localizations.cancelMerge(video.title))));
-
+        showSnackbar(
+            SnackBar(content: Text(localizations.cancelMerge(video.title))));
       } else {
         // cancel merge
         downloadVideo.downloadStatus = DownloadStatus.canceled;
-        showSnackbar(SnackBar(content: Text(localizations.cancelMerge(video.title))));
-
+        showSnackbar(
+            SnackBar(content: Text(localizations.cancelMerge(video.title))));
       }
 
       // remove source file (mp4, ...)
       await File(pathSource).delete();
-
     }, (Log log) {
       // get logs during session
       print("log: ${log.getMessage()}");
-
     }, (Statistics stats) {
       // generate stats
-      downloadVideo.downloadPerc = (stats.getTime() * 1000 / video.duration.inMicroseconds * 100).round();
+      downloadVideo.downloadPerc =
+          (stats.getTime() * 1000 / video.duration.inMicroseconds * 100)
+              .round();
       // print("stats: ${stats.toString()}");
       // print("stats: ${stats.getSize()}");
-
     });
-
   }
 
   SingleTrack processTrack(
@@ -598,8 +649,14 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
     final file = File(tempPath);
     final sink = file.openWrite();
 
-    final downloadVideo = SingleTrack(id, tempPath, 'Temp$id',
-        bytesToString(stream.size.totalBytes), stream.size.totalBytes, type,
+    final downloadVideo = SingleTrack(
+        id,
+        stream.videoId.toString(),
+        tempPath,
+        'Temp$id',
+        bytesToString(stream.size.totalBytes),
+        stream.size.totalBytes,
+        type,
         prefs: _prefs);
 
     final dataStream = yt.videos.streamsClient.get(stream);
@@ -679,6 +736,7 @@ class DownloadManagerImpl extends ChangeNotifier implements DownloadManager {
 @JsonSerializable()
 class SingleTrack extends ChangeNotifier {
   final int id;
+  final String youtubeID;
   final String title;
   final String size;
   final int totalSize;
@@ -705,34 +763,34 @@ class SingleTrack extends ChangeNotifier {
   set path(String path) {
     _path = path;
 
-    _prefs?.setString('video_$id', json.encode(this));
+    _prefs?.setString('$id', json.encode(this));
     notifyListeners();
   }
 
   set downloadPerc(int value) {
     _downloadPerc = value;
 
-    _prefs?.setString('video_$id', json.encode(this));
+    _prefs?.setString('$id', json.encode(this));
     notifyListeners();
   }
 
   set downloadStatus(DownloadStatus value) {
     _downloadStatus = value;
 
-    _prefs?.setString('video_$id', json.encode(this));
+    _prefs?.setString('$id', json.encode(this));
     notifyListeners();
   }
 
   set downloadedBytes(int value) {
     _downloadedBytes = value;
 
-    _prefs?.setString('video_$id', json.encode(this));
+    _prefs?.setString('$id', json.encode(this));
     notifyListeners();
   }
 
   set error(String value) {
     _error = value;
-    _prefs?.setString('video_$id', json.encode(this));
+    _prefs?.setString('$id', json.encode(this));
 
     notifyListeners();
   }
@@ -743,8 +801,8 @@ class SingleTrack extends ChangeNotifier {
   @JsonKey(ignore: true)
   final SharedPreferences? _prefs;
 
-  SingleTrack(this.id, String path, this.title, this.size, this.totalSize,
-      this.streamType,
+  SingleTrack(this.id, this.youtubeID, String path, this.title, this.size,
+      this.totalSize, this.streamType,
       {SharedPreferences? prefs})
       : _path = path,
         _prefs = prefs;
@@ -776,13 +834,21 @@ class MuxedTrack extends SingleTrack {
   MuxedTrack(int id, String path, String title, String size, int totalSize,
       this.audio, this.video,
       {SharedPreferences? prefs, this.streamType = StreamType.video})
-      : super(id, path, title, size, totalSize, streamType, prefs: prefs);
+      : super(id, "", path, title, size, totalSize, streamType, prefs: prefs);
 
   factory MuxedTrack.fromJson(Map<String, dynamic> json) =>
       _$MuxedTrackFromJson(json);
 
   @override
   Map<String, dynamic> toJson() => _$MuxedTrackToJson(this);
+
+  String get youtubeID {
+    // Check if the video is not null and has a non-empty youtubeID
+    if (video.youtubeID.isNotEmpty) {
+      return video.youtubeID;
+    }
+    return audio.youtubeID;
+  }
 }
 
 class StreamMerge extends ChangeNotifier {
