@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,8 +60,14 @@ class SettingsImpl implements Settings {
   @override
   final bool isLeadingZeroPlaylist;
 
-  const SettingsImpl._(this._prefs, this.downloadPath, this.theme,
-      this.ffmpegContainer, this.ffmpegPath, this.locale, this.downloadQuota,
+  const SettingsImpl._(
+      this._prefs,
+      this.downloadPath,
+      this.theme,
+      this.ffmpegContainer,
+      this.ffmpegPath,
+      this.locale,
+      this.downloadQuota,
       this.isLeadingZeroPlaylist);
 
   @override
@@ -95,22 +102,35 @@ class SettingsImpl implements Settings {
     }
 
     return SettingsImpl._(
-        _prefs,
-        downloadPath ?? this.downloadPath,
-        theme ?? this.theme,
-        ffmpegContainer ?? this.ffmpegContainer,
-        ffmpegPath ?? this.ffmpegPath,
-        locale ?? this.locale,
-        downloadQuota ?? this.downloadQuota,
-        isLeadingZeroPlaylist ?? this.isLeadingZeroPlaylist,
+      _prefs,
+      downloadPath ?? this.downloadPath,
+      theme ?? this.theme,
+      ffmpegContainer ?? this.ffmpegContainer,
+      ffmpegPath ?? this.ffmpegPath,
+      locale ?? this.locale,
+      downloadQuota ?? this.downloadQuota,
+      isLeadingZeroPlaylist ?? this.isLeadingZeroPlaylist,
     );
   }
 
   static Future<SettingsImpl> init(SharedPreferences prefs) async {
-    var path = prefs.getString('download_path');
-    if (path == null || await Directory(path).exists() == false) {
-      path = (await getDefaultDownloadDir()).path;
-      prefs.setString('download_path', path);
+    var downloadPath = prefs.getString('download_path');
+    if (downloadPath == null ||
+        await Directory(downloadPath).exists() == false) {
+      downloadPath = (await getDefaultDownloadDir()).path;
+      downloadPath = path.join(downloadPath, "ydownloader");
+      var downloadDir = Directory(downloadPath);
+      // Check if the directory exists
+      if (!(await downloadDir.exists())) {
+        // Create the directory if it does not exist
+        try {
+          await downloadDir.create(recursive: true);
+          debugPrint('Directory created: $downloadPath');
+        } catch (e) {
+          debugPrint('Error creating directory: $e');
+        }
+      }
+      prefs.setString('download_path', downloadPath);
     }
     var themeId = prefs.getInt('theme_id');
     if (themeId == null) {
@@ -138,7 +158,8 @@ class SettingsImpl implements Settings {
 
     var langCode = prefs.getString('locale');
     if (langCode == null) {
-      final defaultLang = WidgetsBinding.instance!.window.locales.first;
+      // ignore: deprecated_member_use
+      final defaultLang = WidgetsBinding.instance.window.locales.first;
       langCode = defaultLang.languageCode;
       prefs.setString('locale', defaultLang.languageCode);
     }
@@ -155,12 +176,17 @@ class SettingsImpl implements Settings {
       prefs.setBool("playlist_isleadingzero", isLeadingZeroPlaylist);
     }
 
-    return SettingsImpl._(prefs, path, ThemeSetting.fromId(themeId),
-        ffmpegContainer, ffmpegPath, Locale(langCode), downloadQuota,
-        isLeadingZeroPlaylist,
+    return SettingsImpl._(
+      prefs,
+      downloadPath,
+      ThemeSetting.fromId(themeId),
+      ffmpegContainer,
+      ffmpegPath,
+      Locale(langCode),
+      downloadQuota,
+      isLeadingZeroPlaylist,
     );
   }
-
 }
 
 class ThemeSetting {
@@ -218,8 +244,8 @@ Future<Directory> getDefaultDownloadDir() async {
     return paths!.first;
   }
   if (Platform.isIOS) {
-   final path = await getApplicationDocumentsDirectory();
-   return path;
+    final path = await getApplicationDocumentsDirectory();
+    return path;
   }
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
     final path = await getDownloadsDirectory();

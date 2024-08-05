@@ -1,1 +1,11 @@
 include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Enable or disable specific lint rules
+    # Add or remove rules according to your preferences
+    always_declare_return_types: true
+    avoid_empty_else: true
+    avoid_print: true
+    camel_case_types: true
+    unnecessary_new: true

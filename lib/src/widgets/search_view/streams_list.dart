@@ -12,6 +12,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import '../../providers.dart';
 import '../../shared.dart';
 
+// ignore: must_be_immutable
 class StreamsList extends HookConsumerWidget {
   final QueryVideo video;
 
@@ -48,9 +49,9 @@ class StreamsList extends HookConsumerWidget {
     AudioOnlyStreamInfo? streamBestAudio;
 
     // list of stream widget
-    for(var stream in filteredList) {
-      Widget widgetStream = ListTile(
-          title: Text('${stream.container} ${stream.runtimeType}'));
+    for (var stream in filteredList) {
+      Widget widgetStream =
+          ListTile(title: Text('${stream.container} ${stream.runtimeType}'));
 
       if (stream is MuxedStreamInfo) {
         widgetStream = MaterialButton(
@@ -61,8 +62,8 @@ class StreamsList extends HookConsumerWidget {
             }
 
             // download
-            await downloadManager.state.downloadStream(yt, video, settings.state,
-                StreamType.video, AppLocalizations.of(context)!,
+            await downloadManager.state.downloadStream(yt, video,
+                settings.state, StreamType.video, AppLocalizations.of(context)!,
                 singleStream: stream);
           },
           child: ListTile(
@@ -76,7 +77,8 @@ class StreamsList extends HookConsumerWidget {
       if (stream is VideoOnlyStreamInfo) {
         // search best format
         streamBestVideo ??= stream; // first is best
-        if (/*stream.videoCodec == "mp4" && */stream.size.totalBytes > streamBestVideo.size.totalBytes) {
+        if (/*stream.videoCodec == "mp4" && */ stream.size.totalBytes >
+            streamBestVideo.size.totalBytes) {
           // set new one
           streamBestVideo = stream;
         }
@@ -93,17 +95,15 @@ class StreamsList extends HookConsumerWidget {
             }
 
             // download
-            await downloadManager.state.downloadStream(yt, video, settings.state,
-                StreamType.video, AppLocalizations.of(context)!,
+            await downloadManager.state.downloadStream(yt, video,
+                settings.state, StreamType.video, AppLocalizations.of(context)!,
                 singleStream: stream);
           },
           child: ListTile(
-            subtitle: Text(
-                '${stream.qualityLabel} - ${stream.videoCodec}'),
+            subtitle: Text('${stream.qualityLabel} - ${stream.videoCodec}'),
             title: Text(
                 '${AppLocalizations.of(context)!.tracksVideo} (.${stream.container}) - ${bytesToString(stream.size.totalBytes)}'),
-            trailing:
-            stream == merger.video ? const Icon(Icons.done) : null,
+            trailing: stream == merger.video ? const Icon(Icons.done) : null,
           ),
         );
       }
@@ -126,17 +126,15 @@ class StreamsList extends HookConsumerWidget {
             }
 
             // download
-            await downloadManager.state.downloadStream(yt, video, settings.state,
-                StreamType.audio, AppLocalizations.of(context)!,
+            await downloadManager.state.downloadStream(yt, video,
+                settings.state, StreamType.audio, AppLocalizations.of(context)!,
                 singleStream: stream);
           },
           child: ListTile(
-            subtitle: Text(
-                '${stream.audioCodec} | Bitrate: ${stream.bitrate}'),
+            subtitle: Text('${stream.audioCodec} | Bitrate: ${stream.bitrate}'),
             title: Text(
                 '${AppLocalizations.of(context)!.tracksAudio} (.${stream.container}) - ${bytesToString(stream.size.totalBytes)}'),
-            trailing:
-            stream == merger.audio ? const Icon(Icons.done) : null,
+            trailing: stream == merger.audio ? const Icon(Icons.done) : null,
           ),
         );
       }
@@ -147,7 +145,8 @@ class StreamsList extends HookConsumerWidget {
 
     // add best stream merge
     if (streamBestVideo != null && streamBestAudio != null) {
-      filteredListWidget.insert(0,
+      filteredListWidget.insert(
+          0,
           MaterialButton(
             onPressed: () {
               merger.video = streamBestVideo;
@@ -160,8 +159,7 @@ class StreamsList extends HookConsumerWidget {
               title: Text(
                   '${AppLocalizations.of(context)!.tracksBestMerge} (.${streamBestVideo.container})'),
             ),
-          )
-      );
+          ));
     }
 
     // picture height
@@ -190,15 +188,18 @@ class StreamsList extends HookConsumerWidget {
                   padding: const EdgeInsets.all(4.0),
                   child: GestureDetector(
                       onTap: () async {
-                        if (!await launchUrlString("https://youtu.be/${video.id}")) {
+                        if (!await launchUrlString(
+                            "https://youtu.be/${video.id}")) {
                           // throw 'Could not launch $_url';
                           // oops nothing
                         }
                       },
-                      child: Image.network(video.thumbnail, height: pictureHeight, fit: BoxFit.fitWidth,)
-                  ),
+                      child: Image.network(
+                        video.thumbnail,
+                        height: pictureHeight,
+                        fit: BoxFit.fitWidth,
+                      )),
                 ),
-
                 Positioned(
                     right: 9,
                     bottom: 9,
@@ -213,8 +214,7 @@ class StreamsList extends HookConsumerWidget {
                         style: Theme.of(context)
                             .textTheme
                             .bodyLarge
-                            ?.copyWith(
-                            fontSize: 11, color: Colors.white),
+                            ?.copyWith(fontSize: 11, color: Colors.white),
                       ),
                     )),
               ],
@@ -227,11 +227,11 @@ class StreamsList extends HookConsumerWidget {
             // streams
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
-                itemCount: filteredListWidget.length,
-                itemBuilder: (context, index) {
-                  return filteredListWidget[index];
-                }),
+                  padding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+                  itemCount: filteredListWidget.length,
+                  itemBuilder: (context, index) {
+                    return filteredListWidget[index];
+                  }),
             ),
           ],
         ),
@@ -258,12 +258,17 @@ class StreamsList extends HookConsumerWidget {
         if (merger.audio != null && merger.video != null)
           OutlinedButton(
               style: ButtonStyle(
-                  padding: MaterialStateProperty.all<EdgeInsets>(
+                  padding: WidgetStateProperty.all<EdgeInsets>(
                       const EdgeInsets.all(20))),
               onPressed: () async {
-                await downloadManager.state.downloadStream(yt, video, settings.state,
-                    StreamType.video, AppLocalizations.of(context)!,
-                    merger: merger, ffmpegContainer: settings.state.ffmpegContainer);
+                await downloadManager.state.downloadStream(
+                    yt,
+                    video,
+                    settings.state,
+                    StreamType.video,
+                    AppLocalizations.of(context)!,
+                    merger: merger,
+                    ffmpegContainer: settings.state.ffmpegContainer);
                 Navigator.of(context).pop();
               },
               child: Text(AppLocalizations.of(context)!.mergeTracks)),

@@ -59,7 +59,8 @@ class MainObserver implements ProviderObserver {
   }
 
   @override
-  void providerDidFail(ProviderBase provider, Object error, StackTrace stackTrace, ProviderContainer container) {
+  void providerDidFail(ProviderBase provider, Object error,
+      StackTrace stackTrace, ProviderContainer container) {
     // TODO: implement providerDidFail
   }
 }

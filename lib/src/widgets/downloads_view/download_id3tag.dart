@@ -7,9 +7,9 @@ import 'package:youtube_downloader/src/models/query_video.dart';
 class DownloadId3Tag extends HookConsumerWidget {
   final QueryVideo video;
 
-  TextEditingController titleController = TextEditingController();
-  TextEditingController artistController = TextEditingController();
-  TextEditingController albumController = TextEditingController();
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController artistController = TextEditingController();
+  final TextEditingController albumController = TextEditingController();
 
   DownloadId3Tag(this.video, {Key? key}) : super(key: key) {
     titleController.text = video.title;
@@ -42,41 +42,44 @@ class DownloadId3Tag extends HookConsumerWidget {
             Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0, vertical: 10.0),
                   child: TextField(
                     controller: titleController,
                     onChanged: (value) => video.title = value,
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
-                      labelText: AppLocalizations.of(context)!.trackID3FieldTitle,
+                      labelText:
+                          AppLocalizations.of(context)!.trackID3FieldTitle,
                     ),
                   ),
                 ),
-
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0, vertical: 10.0),
                   child: TextField(
                     controller: artistController,
                     onChanged: (value) => video.author = value,
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
-                      labelText: AppLocalizations.of(context)!.trackID3FieldArtist,
+                      labelText:
+                          AppLocalizations.of(context)!.trackID3FieldArtist,
                     ),
                   ),
                 ),
-
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0, vertical: 10.0),
                   child: TextField(
                     controller: albumController,
                     onChanged: (value) => video.album = value,
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
-                      labelText: AppLocalizations.of(context)!.trackID3FieldAlbum,
+                      labelText:
+                          AppLocalizations.of(context)!.trackID3FieldAlbum,
                     ),
                   ),
                 ),
-
               ],
             ),
           ],
@@ -103,8 +106,8 @@ class DownloadId3Tag extends HookConsumerWidget {
       actions: <Widget>[
         OutlinedButton(
             style: ButtonStyle(
-              padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(20))
-            ),
+                padding: WidgetStateProperty.all<EdgeInsets>(
+                    const EdgeInsets.all(20))),
             onPressed: () async {
               Navigator.of(context).pop();
               if (video.path != null) {
@@ -115,5 +118,4 @@ class DownloadId3Tag extends HookConsumerWidget {
       ],
     );
   }
-
 }

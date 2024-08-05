@@ -1,24 +1,17 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:url_launcher/url_launcher_string.dart';
-import 'package:youtube_downloader/src/models/download_manager.dart';
 import 'package:youtube_downloader/src/models/query_video.dart';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 import '../../providers.dart';
-import '../../shared.dart';
 
 class PlaylistsList extends StatefulHookConsumerWidget {
   final QueryListVideos playlist;
 
-  PlaylistsList(this.playlist, {Key? key}) : super(key: key);
+  const PlaylistsList(this.playlist, {Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState()  => _PlaylistsLists();
+  ConsumerState<ConsumerStatefulWidget> createState() => _PlaylistsLists();
 }
 
 class _PlaylistsLists extends ConsumerState<PlaylistsList> {
@@ -33,16 +26,24 @@ class _PlaylistsLists extends ConsumerState<PlaylistsList> {
     final downloadManager = ref.watch(downloadProvider.state);
 
     // list of stream widget
-    for(var stream in widget.playlist.items) {
+    for (var stream in widget.playlist.items) {
       // image leading
-      Widget image = Image.network(stream.queryVideo.thumbnail, height: 60, fit: BoxFit.fitWidth,);
+      Widget image = Image.network(
+        stream.queryVideo.thumbnail,
+        height: 60,
+        fit: BoxFit.fitWidth,
+      );
       if (!stream.enable) {
         image = ColorFiltered(
           colorFilter: const ColorFilter.mode(
             Colors.black87,
             BlendMode.multiply,
           ),
-          child:Image.network(stream.queryVideo.thumbnail, height: 60, fit: BoxFit.fitWidth,),
+          child: Image.network(
+            stream.queryVideo.thumbnail,
+            height: 60,
+            fit: BoxFit.fitWidth,
+          ),
         );
       }
 
@@ -50,19 +51,31 @@ class _PlaylistsLists extends ConsumerState<PlaylistsList> {
       Widget widgetStream = MaterialButton(
         onPressed: () {
           // change download status
-          setState(() => widget.playlist.enableVideo(stream.id, !stream.enable));
+          setState(
+              () => widget.playlist.enableVideo(stream.id, !stream.enable));
         },
         child: ListTile(
           subtitle: Text(
-            '${AppLocalizations.of(context)!.author} : ${stream.queryVideo.author} - ${stream.queryVideo.duration.inHours.toString().padLeft(2, '0')}:${(stream.queryVideo.duration.inMinutes%60).toString().padLeft(2, '0')}:${(stream.queryVideo.duration.inSeconds%60).toString().padLeft(2, '0')}',
-            style: stream.enable ? null : const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.grey),
+            '${AppLocalizations.of(context)!.author} : ${stream.queryVideo.author} - ${stream.queryVideo.duration.inHours.toString().padLeft(2, '0')}:${(stream.queryVideo.duration.inMinutes % 60).toString().padLeft(2, '0')}:${(stream.queryVideo.duration.inSeconds % 60).toString().padLeft(2, '0')}',
+            style: stream.enable
+                ? null
+                : const TextStyle(
+                    decoration: TextDecoration.lineThrough, color: Colors.grey),
           ),
           title: Text(
             stream.queryVideo.title,
-            style: stream.enable ? null : const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.grey),
+            style: stream.enable
+                ? null
+                : const TextStyle(
+                    decoration: TextDecoration.lineThrough, color: Colors.grey),
           ),
           leading: image,
-          trailing: (stream.enable) ? const Icon(Icons.done) : const Icon(Icons.close, color: Colors.grey,),
+          trailing: (stream.enable)
+              ? const Icon(Icons.done)
+              : const Icon(
+                  Icons.close,
+                  color: Colors.grey,
+                ),
         ),
       );
 
@@ -85,22 +98,29 @@ class _PlaylistsLists extends ConsumerState<PlaylistsList> {
           children: [
             Padding(
               padding: const EdgeInsets.all(4.0),
-              child: Text(AppLocalizations.of(context)!.playlistTitle(widget.playlist.videoEnableCount), style: const TextStyle(fontSize: 20),),
+              child: Text(
+                AppLocalizations.of(context)!
+                    .playlistTitle(widget.playlist.videoEnableCount),
+                style: const TextStyle(fontSize: 20),
+              ),
             ),
 
             Padding(
               padding: const EdgeInsets.all(4.0),
-              child: Text(AppLocalizations.of(context)!.playlistTooltip, style: const TextStyle(fontSize: 13),),
+              child: Text(
+                AppLocalizations.of(context)!.playlistTooltip,
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
 
             // streams
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
-                itemCount: filteredListWidget.length,
-                itemBuilder: (context, index) {
-                  return filteredListWidget[index];
-                }),
+                  padding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+                  itemCount: filteredListWidget.length,
+                  itemBuilder: (context, index) {
+                    return filteredListWidget[index];
+                  }),
             ),
           ],
         ),
@@ -126,7 +146,9 @@ class _PlaylistsLists extends ConsumerState<PlaylistsList> {
       actions: <Widget>[
         OutlinedButton(
             style: OutlinedButton.styleFrom(
-              foregroundColor: (widget.playlist.videoEnableCount < 1) ? Colors.grey : Colors.blueAccent,
+              foregroundColor: (widget.playlist.videoEnableCount < 1)
+                  ? Colors.grey
+                  : Colors.blueAccent,
               padding: const EdgeInsets.all(10),
             ),
             onPressed: () async {
@@ -139,14 +161,19 @@ class _PlaylistsLists extends ConsumerState<PlaylistsList> {
               Navigator.of(context).pop();
 
               // start download
-              await widget.playlist.download(downloadManager.state, yt, settings.state, AppLocalizations.of(context)!, QueryListDownload.merge);
+              await widget.playlist.download(
+                  downloadManager.state,
+                  yt,
+                  settings.state,
+                  AppLocalizations.of(context)!,
+                  QueryListDownload.merge);
             },
-            child: Text(AppLocalizations.of(context)!.playlistDownloadVideos)
-        ),
-
+            child: Text(AppLocalizations.of(context)!.playlistDownloadVideos)),
         OutlinedButton(
             style: OutlinedButton.styleFrom(
-              foregroundColor: (widget.playlist.videoEnableCount < 1) ? Colors.grey : Colors.orange,
+              foregroundColor: (widget.playlist.videoEnableCount < 1)
+                  ? Colors.grey
+                  : Colors.orange,
               padding: const EdgeInsets.all(10),
             ),
             onPressed: () async {
@@ -159,14 +186,20 @@ class _PlaylistsLists extends ConsumerState<PlaylistsList> {
               Navigator.of(context).pop();
 
               // start download
-              await widget.playlist.download(downloadManager.state, yt, settings.state, AppLocalizations.of(context)!, QueryListDownload.audio);
+              await widget.playlist.download(
+                  downloadManager.state,
+                  yt,
+                  settings.state,
+                  AppLocalizations.of(context)!,
+                  QueryListDownload.audio);
             },
-            child: Text(AppLocalizations.of(context)!.playlistDownloadAudiosOnly)
-        ),
-
+            child:
+                Text(AppLocalizations.of(context)!.playlistDownloadAudiosOnly)),
         OutlinedButton(
             style: OutlinedButton.styleFrom(
-              foregroundColor: (widget.playlist.videoEnableCount < 1) ? Colors.grey : Colors.orange,
+              foregroundColor: (widget.playlist.videoEnableCount < 1)
+                  ? Colors.grey
+                  : Colors.orange,
               padding: const EdgeInsets.all(10),
             ),
             onPressed: () async {
@@ -179,13 +212,16 @@ class _PlaylistsLists extends ConsumerState<PlaylistsList> {
               Navigator.of(context).pop();
 
               // start download
-              await widget.playlist.download(downloadManager.state, yt, settings.state, AppLocalizations.of(context)!, QueryListDownload.video);
+              await widget.playlist.download(
+                  downloadManager.state,
+                  yt,
+                  settings.state,
+                  AppLocalizations.of(context)!,
+                  QueryListDownload.video);
             },
-            child: Text(AppLocalizations.of(context)!.playlistDownloadVideosOnly)
-        ),
-
+            child:
+                Text(AppLocalizations.of(context)!.playlistDownloadVideosOnly)),
       ],
     );
   }
-
 }

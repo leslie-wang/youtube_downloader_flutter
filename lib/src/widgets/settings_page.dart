@@ -38,9 +38,9 @@ class SettingsPage extends HookConsumerWidget {
     final settings = ref.watch(settingsProvider.state);
 
     // ffmpeg path directory if windows/linux
-    Widget ffmpeg_locator_settings = Container();
+    Widget ffmpegLocatorSettings = Container();
     if (Platform.isWindows || Platform.isLinux) {
-      ffmpeg_locator_settings = ListTile(
+      ffmpegLocatorSettings = ListTile(
         title: Text(intl.ffmpegPath),
         subtitle: Text(settings.state.ffmpegPath),
         onTap: () async {
@@ -86,7 +86,6 @@ class SettingsPage extends HookConsumerWidget {
           const Divider(
             height: 0,
           ),
-
           ListTile(
             title: Text(intl.downloadDir),
             subtitle: Text(settings.state.downloadPath),
@@ -102,12 +101,10 @@ class SettingsPage extends HookConsumerWidget {
           const Divider(
             height: 0,
           ),
-
-          ffmpeg_locator_settings,
+          ffmpegLocatorSettings,
           const Divider(
             height: 0,
           ),
-
           ListTile(
             title: Text(intl.ffmpegContainer),
             subtitle: Text(intl.ffmpegDescription),
@@ -121,7 +118,6 @@ class SettingsPage extends HookConsumerWidget {
           const Divider(
             height: 0,
           ),
-
           ListTile(
             title: Text(intl.language),
             trailing: DropdownButton(
@@ -134,32 +130,31 @@ class SettingsPage extends HookConsumerWidget {
           const Divider(
             height: 0,
           ),
-
           ListTile(
             title: Text(intl.settingsQuotaTitle),
             subtitle: Text(intl.settingsQuotaDescription),
             trailing: DropdownButton(
               value: settings.state.downloadQuota,
-              onChanged: (int? value) => settings.state = settings.state.copyWith(downloadQuota: value),
+              onChanged: (int? value) => settings.state =
+                  settings.state.copyWith(downloadQuota: value),
               items: downloadQuotaItems,
             ),
           ),
           const Divider(
             height: 0,
           ),
-
           ListTile(
             title: Text(intl.settingsLeadingZeroTitle),
             subtitle: Text(intl.settingsLeadingZeroDescription),
             trailing: Switch(
               value: settings.state.isLeadingZeroPlaylist,
-              onChanged: (bool value) => settings.state = settings.state.copyWith(isLeadingZeroPlaylist: value),
+              onChanged: (bool value) => settings.state =
+                  settings.state.copyWith(isLeadingZeroPlaylist: value),
             ),
           ),
           const Divider(
             height: 0,
           ),
-
           ListTile(
             title: Text(intl.credits),
             subtitle: Text(intl.credits_content),
@@ -167,7 +162,6 @@ class SettingsPage extends HookConsumerWidget {
           const Divider(
             height: 0,
           ),
-
         ],
       ),
     );
